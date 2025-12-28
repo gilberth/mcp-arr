@@ -1,0 +1,21 @@
+# Dependencies
+node_modules
+
+# Build output (rebuilt in container)
+dist
+
+# Development files
+.git
+.github
+.claude
+.vscode
+*.md
+!README.md
+
+# Docker registry files (not needed in image)
+docker-registry
+
+# Config files not needed for build
+.gitignore
+.npmrc
+.env*
