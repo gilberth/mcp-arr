@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
 
-MCP server for the [*arr media management suite](https://wiki.servarr.com/) - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, and [Lingarr](https://github.com/lingarr/lingarr) (subtitle translation).
+MCP server for the [*arr media management suite](https://wiki.servarr.com/) - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, [Lingarr](https://github.com/lingarr/lingarr) (subtitle translation), and [Bazarr](https://www.bazarr.media/) (subtitle management).
 
-> **Note**: This is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) with added Lingarr integration for subtitle translation.
+> **Note**: This is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) with added Lingarr and Bazarr integration for comprehensive subtitle management.
 
 ## Why Use This?
 
@@ -17,6 +17,7 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
 - **Calendar integration** - See upcoming releases for all media types
 - **Configuration review** - Get AI-powered suggestions for optimizing your setup
 - **Subtitle translation** - Manage Lingarr subtitle translations with AI models
+- **Subtitle management** - Download and manage subtitles with Bazarr
 - **Flexible configuration** - Enable only the services you use
 
 ## Features
@@ -29,6 +30,7 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
 | **Readarr (Books)** | List authors, view books, search writers, trigger downloads, check queue, view calendar, review setup |
 | **Prowlarr (Indexers)** | List indexers, search across all trackers, test health, view statistics |
 | **Lingarr (Subtitles)** | Translate subtitles, view translation queue, manage requests, sync media, view statistics |
+| **Bazarr (Subtitles)** | Download subtitles, manage wanted list, search providers, view history, sync with Sonarr/Radarr |
 | **Cross-Service** | Status check, unified search across all configured services |
 | **Configuration** | Quality profiles, download clients, naming conventions, health checks, storage info |
 | **TRaSH Guides** | Reference quality profiles, custom formats, naming conventions, compare against recommendations |
@@ -43,6 +45,7 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
   - [Readarr](https://readarr.com/) for books
   - [Prowlarr](https://prowlarr.com/) for indexer management
   - [Lingarr](https://github.com/lingarr/lingarr) for subtitle translation
+  - [Bazarr](https://www.bazarr.media/) for subtitle management
 
 ## Installation
 
@@ -97,7 +100,9 @@ Add to your Claude Desktop config file:
         "PROWLARR_URL": "http://localhost:9696",
         "PROWLARR_API_KEY": "your-prowlarr-api-key",
         "LINGARR_URL": "http://localhost:9877",
-        "LINGARR_API_KEY": "your-lingarr-api-key"
+        "LINGARR_API_KEY": "your-lingarr-api-key",
+        "BAZARR_URL": "http://localhost:6767",
+        "BAZARR_API_KEY": "your-bazarr-api-key"
       }
     }
   }
@@ -120,7 +125,9 @@ Add to `~/.claude.json` or your MCP config:
         "RADARR_URL": "http://localhost:7878",
         "RADARR_API_KEY": "your-radarr-api-key",
         "LINGARR_URL": "http://localhost:9877",
-        "LINGARR_API_KEY": "your-lingarr-api-key"
+        "LINGARR_API_KEY": "your-lingarr-api-key",
+        "BAZARR_URL": "http://localhost:6767",
+        "BAZARR_API_KEY": "your-bazarr-api-key"
       }
     }
   }
@@ -174,6 +181,16 @@ Add to `~/.claude.json` or your MCP config:
 - "Show translation statistics"
 - "Cancel that translation request"
 - "Sync movies from Radarr to Lingarr"
+
+### Subtitle Management (Bazarr)
+- "What episodes are missing subtitles?"
+- "Show me movies that need subtitles"
+- "Search for Spanish subtitles for this movie"
+- "Download English subtitles for this episode"
+- "Show the subtitle download history"
+- "What are the available languages in Bazarr?"
+- "Sync series from Sonarr to Bazarr"
+- "Check the Bazarr health status"
 
 ### Configuration Review
 - "Review my Sonarr setup and suggest improvements"
@@ -274,6 +291,34 @@ Add to `~/.claude.json` or your MCP config:
 | `lingarr_exclude_media` | Toggle exclusion of media from automatic translation |
 | `lingarr_get_version` | Get Lingarr version information |
 
+### Bazarr Tools (Subtitle Management)
+
+| Tool | Description |
+|------|-------------|
+| `bazarr_get_status` | Get Bazarr system status including version and connected services |
+| `bazarr_get_badges` | Get badge counts showing missing subtitles and connection status |
+| `bazarr_get_health` | Get health check results showing any issues |
+| `bazarr_get_languages` | List available languages (optionally filter to enabled only) |
+| `bazarr_get_tasks` | List scheduled tasks with their status and next run time |
+| `bazarr_run_task` | Manually trigger a scheduled task |
+| `bazarr_get_series` | List TV series with subtitle status and missing counts |
+| `bazarr_get_series_details` | Get detailed info about a specific series including episodes |
+| `bazarr_get_episodes` | Get episodes for a series with subtitle status |
+| `bazarr_get_wanted_episodes` | List episodes with missing subtitles (wanted list) |
+| `bazarr_search_episode_subtitles` | Search for available subtitles for an episode |
+| `bazarr_download_episode_subtitle` | Download a specific subtitle for an episode |
+| `bazarr_search_missing_episode_subtitles` | Trigger search for missing episode subtitles |
+| `bazarr_get_movies` | List movies with subtitle status |
+| `bazarr_get_movie_details` | Get detailed info about a specific movie |
+| `bazarr_get_wanted_movies` | List movies with missing subtitles (wanted list) |
+| `bazarr_search_movie_subtitles` | Search for available subtitles for a movie |
+| `bazarr_download_movie_subtitle` | Download a specific subtitle for a movie |
+| `bazarr_search_missing_movie_subtitles` | Trigger search for missing movie subtitles |
+| `bazarr_get_series_history` | Get subtitle download history for series |
+| `bazarr_get_movie_history` | Get subtitle download history for movies |
+| `bazarr_sync_series` | Trigger a sync of TV series from Sonarr |
+| `bazarr_sync_movies` | Trigger a sync of movies from Radarr |
+
 ### Configuration Review Tools
 
 These tools are available for Sonarr, Radarr, Lidarr, and Readarr. Replace `{service}` with the service name (e.g., `sonarr_get_quality_profiles`).
@@ -359,7 +404,7 @@ MIT - see [LICENSE](LICENSE) for details.
 
 ## Credits
 
-This project is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) by Jim Christian, with added Lingarr integration for subtitle translation.
+This project is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) by Jim Christian, with added Lingarr and Bazarr integration for comprehensive subtitle management.
 
 ## Links
 
@@ -368,5 +413,6 @@ This project is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-a
 - [Servarr Wiki](https://wiki.servarr.com/) - Documentation for all *arr applications
 - [TRaSH Guides](https://trash-guides.info/) - Quality profiles, custom formats, and setup guides
 - [Lingarr](https://github.com/lingarr/lingarr) - Subtitle translation service
+- [Bazarr](https://www.bazarr.media/) - Subtitle management companion
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [Original mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) - Original project by Jim Christian

@@ -1,8 +1,8 @@
 {
   "name": "@thelord/mcp-arr",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "mcpName": "io.github.gilberth/mcp-arr",
-  "description": "MCP server for *arr media management suite - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Lingarr (subtitle translation)",
+  "description": "MCP server for *arr media management suite - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Lingarr, Bazarr (subtitle management)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -27,6 +27,7 @@
     "readarr",
     "prowlarr",
     "lingarr",
+    "bazarr",
     "subtitles",
     "translation",
     "media",

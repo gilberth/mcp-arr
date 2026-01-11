@@ -32,9 +32,12 @@ import { trashClient, TrashService } from "./trash-client.js";
 import { LingarrClient } from "./lingarr-client.js";
 import { getLingarrTools } from "./lingarr-tools.js";
 import { handleLingarrTool, getLingarrStatus } from "./lingarr-handlers.js";
+import { BazarrClient } from "./bazarr-client.js";
+import { bazarrTools } from "./bazarr-tools.js";
+import { handleBazarrTool } from "./bazarr-handlers.js";
 
 // Configuration from environment
-type AllServices = ArrService | 'lingarr';
+type AllServices = ArrService | 'lingarr' | 'bazarr';
 
 interface ServiceConfig {
   name: AllServices;
@@ -49,7 +52,8 @@ const services: ServiceConfig[] = [
   { name: 'lidarr', displayName: 'Lidarr (Music)', url: process.env.LIDARR_URL, apiKey: process.env.LIDARR_API_KEY },
   { name: 'readarr', displayName: 'Readarr (Books)', url: process.env.READARR_URL, apiKey: process.env.READARR_API_KEY },
   { name: 'prowlarr', displayName: 'Prowlarr (Indexers)', url: process.env.PROWLARR_URL, apiKey: process.env.PROWLARR_API_KEY },
-  { name: 'lingarr', displayName: 'Lingarr (Subtitles)', url: process.env.LINGARR_URL, apiKey: process.env.LINGARR_API_KEY },
+  { name: 'lingarr', displayName: 'Lingarr (Subtitle Translation)', url: process.env.LINGARR_URL, apiKey: process.env.LINGARR_API_KEY },
+  { name: 'bazarr', displayName: 'Bazarr (Subtitles)', url: process.env.BAZARR_URL, apiKey: process.env.BAZARR_API_KEY },
 ];
 
 // Check which services are configured
@@ -69,6 +73,7 @@ const clients: {
   readarr?: ReadarrClient;
   prowlarr?: ProwlarrClient;
   lingarr?: LingarrClient;
+  bazarr?: BazarrClient;
 } = {};
 
 for (const service of configuredServices) {
@@ -91,6 +96,9 @@ for (const service of configuredServices) {
       break;
     case 'lingarr':
       clients.lingarr = new LingarrClient(config);
+      break;
+    case 'bazarr':
+      clients.bazarr = new BazarrClient(config);
       break;
   }
 }
@@ -597,6 +605,11 @@ if (clients.lingarr) {
   TOOLS.push(...getLingarrTools());
 }
 
+// Bazarr tools - imported from separate module
+if (clients.bazarr) {
+  TOOLS.push(...bazarrTools);
+}
+
 // Cross-service search tool
 TOOLS.push({
   name: "arr_search_all",
@@ -785,6 +798,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return lingarrResult;
     }
 
+    // Delegate Bazarr tools to separate handler module
+    if (name.startsWith('bazarr_') && clients.bazarr) {
+      const result = await handleBazarrTool(
+        clients.bazarr,
+        name,
+        (args || {}) as Record<string, unknown>
+      );
+      return {
+        content: [{ type: "text", text: result }],
+      };
+    }
+
     switch (name) {
       case "arr_status": {
         const statuses: Record<string, unknown> = {};
@@ -793,8 +818,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             if (service.name === 'lingarr' && clients.lingarr) {
               // Lingarr status handled by separate module
               statuses[service.name] = await getLingarrStatus(clients.lingarr);
+            } else if (service.name === 'bazarr' && clients.bazarr) {
+              // Bazarr has different status format
+              const status = await clients.bazarr.getStatus();
+              statuses[service.name] = {
+                configured: true,
+                connected: true,
+                version: status.bazarr_version,
+                appName: 'Bazarr',
+                sonarrVersion: status.sonarr_version || 'Not connected',
+                radarrVersion: status.radarr_version || 'Not connected',
+              };
             } else {
-              const client = clients[service.name as keyof Omit<typeof clients, 'lingarr'>];
+              const client = clients[service.name as keyof Omit<typeof clients, 'lingarr' | 'bazarr'>];
               if (client) {
                 const status = await client.getStatus();
                 statuses[service.name] = {
