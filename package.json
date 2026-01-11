@@ -1,16 +1,18 @@
 {
-  "name": "mcp-arr-server",
-  "version": "1.5.0",
-  "mcpName": "io.github.aplaceforallmystuff/mcp-arr",
-  "description": "MCP server for *arr media management suite - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Lingarr",
+  "name": "@thelord/mcp-arr",
+  "version": "1.0.0",
+  "mcpName": "io.github.gilberth/mcp-arr",
+  "description": "MCP server for *arr media management suite - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, Lingarr (subtitle translation)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
-    "mcp-arr": "./dist/index.js"
+    "mcp-arr": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -29,11 +31,14 @@
     "translation",
     "media",
     "plex",
+    "jellyfin",
+    "emby",
     "model-context-protocol",
     "claude",
-    "ai"
+    "ai",
+    "arr"
   ],
-  "author": "Jim Christian",
+  "author": "Gilberth (fork of mcp-arr by Jim Christian)",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
@@ -47,6 +52,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aplaceforallmystuff/mcp-arr.git"
+    "url": "git+https://github.com/gilberth/mcp-arr.git"
+  },
+  "homepage": "https://github.com/gilberth/mcp-arr#readme",
+  "bugs": {
+    "url": "https://github.com/gilberth/mcp-arr/issues"
   }
 }

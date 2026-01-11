@@ -1,11 +1,12 @@
 # MCP *arr Server
 
-[![npm version](https://img.shields.io/npm/v/mcp-arr-server.svg)](https://www.npmjs.com/package/mcp-arr-server)
-[![CI](https://github.com/aplaceforallmystuff/mcp-arr/actions/workflows/ci.yml/badge.svg)](https://github.com/aplaceforallmystuff/mcp-arr/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@thelord/mcp-arr.svg)](https://www.npmjs.com/package/@thelord/mcp-arr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
 
 MCP server for the [*arr media management suite](https://wiki.servarr.com/) - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, and [Lingarr](https://github.com/lingarr/lingarr) (subtitle translation).
+
+> **Note**: This is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) with added Lingarr integration for subtitle translation.
 
 ## Why Use This?
 
@@ -15,6 +16,7 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
 - **Download monitoring** - Check queue status and progress across all services
 - **Calendar integration** - See upcoming releases for all media types
 - **Configuration review** - Get AI-powered suggestions for optimizing your setup
+- **Subtitle translation** - Manage Lingarr subtitle translations with AI models
 - **Flexible configuration** - Enable only the services you use
 
 ## Features
@@ -44,16 +46,16 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
 
 ## Installation
 
-### Using npm (Recommended)
+### Using npx (Recommended)
 
 ```bash
-npx mcp-arr-server
+npx @thelord/mcp-arr
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/aplaceforallmystuff/mcp-arr.git
+git clone https://github.com/gilberth/mcp-arr.git
 cd mcp-arr
 npm install
 npm run build
@@ -82,7 +84,7 @@ Add to your Claude Desktop config file:
   "mcpServers": {
     "arr": {
       "command": "npx",
-      "args": ["-y", "mcp-arr-server"],
+      "args": ["-y", "@thelord/mcp-arr"],
       "env": {
         "SONARR_URL": "http://localhost:8989",
         "SONARR_API_KEY": "your-sonarr-api-key",
@@ -102,21 +104,23 @@ Add to your Claude Desktop config file:
 }
 ```
 
-### For Claude Code
+### For Claude Code / OpenCode
 
-Add to `~/.claude.json`:
+Add to `~/.claude.json` or your MCP config:
 
 ```json
 {
   "mcpServers": {
     "arr": {
       "command": "npx",
-      "args": ["-y", "mcp-arr-server"],
+      "args": ["-y", "@thelord/mcp-arr"],
       "env": {
         "SONARR_URL": "http://localhost:8989",
         "SONARR_API_KEY": "your-sonarr-api-key",
         "RADARR_URL": "http://localhost:7878",
-        "RADARR_API_KEY": "your-radarr-api-key"
+        "RADARR_API_KEY": "your-radarr-api-key",
+        "LINGARR_URL": "http://localhost:9877",
+        "LINGARR_API_KEY": "your-lingarr-api-key"
       }
     }
   }
@@ -286,7 +290,7 @@ These tools are available for Sonarr, Radarr, Lidarr, and Readarr. Replace `{ser
 
 The `{service}_review_setup` tool returns all configuration in a single call, enabling natural language conversations about optimizing your setup. Claude can analyze your quality profiles, suggest improvements, explain why certain content isn't being grabbed, and help configure complex settings like custom formats.
 
-> **⚠️ Disclaimer**: The configuration review tools provide **read-only** access to your *arr settings. Any changes to your configuration must be made directly in the *arr application interfaces. The AI's suggestions are recommendations only - always back up your configuration before making significant changes. The maintainers are not responsible for any configuration changes, data loss, or other issues that may arise from following AI-generated recommendations.
+> **Disclaimer**: The configuration review tools provide **read-only** access to your *arr settings. Any changes to your configuration must be made directly in the *arr application interfaces. The AI's suggestions are recommendations only - always back up your configuration before making significant changes.
 
 ### TRaSH Guides Tools
 
@@ -353,11 +357,16 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 MIT - see [LICENSE](LICENSE) for details.
 
+## Credits
+
+This project is a fork of [mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) by Jim Christian, with added Lingarr integration for subtitle translation.
+
 ## Links
 
+- [npm Package](https://www.npmjs.com/package/@thelord/mcp-arr)
+- [GitHub Repository](https://github.com/gilberth/mcp-arr)
 - [Servarr Wiki](https://wiki.servarr.com/) - Documentation for all *arr applications
 - [TRaSH Guides](https://trash-guides.info/) - Quality profiles, custom formats, and setup guides
 - [Lingarr](https://github.com/lingarr/lingarr) - Subtitle translation service
-- [Sonarr API Docs](https://sonarr.tv/docs/api/)
 - [Model Context Protocol](https://modelcontextprotocol.io)
-- [GitHub Repository](https://github.com/aplaceforallmystuff/mcp-arr)
+- [Original mcp-arr](https://github.com/aplaceforallmystuff/mcp-arr) - Original project by Jim Christian
