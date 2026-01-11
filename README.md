@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
 
-MCP server for the [*arr media management suite](https://wiki.servarr.com/) - Sonarr, Radarr, Lidarr, Readarr, and Prowlarr.
+MCP server for the [*arr media management suite](https://wiki.servarr.com/) - Sonarr, Radarr, Lidarr, Readarr, Prowlarr, and [Lingarr](https://github.com/lingarr/lingarr) (subtitle translation).
 
 ## Why Use This?
 
@@ -26,6 +26,7 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
 | **Lidarr (Music)** | List artists, view albums, search musicians, trigger downloads, check queue, view calendar, review setup |
 | **Readarr (Books)** | List authors, view books, search writers, trigger downloads, check queue, view calendar, review setup |
 | **Prowlarr (Indexers)** | List indexers, search across all trackers, test health, view statistics |
+| **Lingarr (Subtitles)** | Translate subtitles, view translation queue, manage requests, sync media, view statistics |
 | **Cross-Service** | Status check, unified search across all configured services |
 | **Configuration** | Quality profiles, download clients, naming conventions, health checks, storage info |
 | **TRaSH Guides** | Reference quality profiles, custom formats, naming conventions, compare against recommendations |
@@ -39,6 +40,7 @@ MCP server for the [*arr media management suite](https://wiki.servarr.com/) - So
   - [Lidarr](https://lidarr.audio/) for music
   - [Readarr](https://readarr.com/) for books
   - [Prowlarr](https://prowlarr.com/) for indexer management
+  - [Lingarr](https://github.com/lingarr/lingarr) for subtitle translation
 
 ## Installation
 
@@ -91,7 +93,9 @@ Add to your Claude Desktop config file:
         "READARR_URL": "http://localhost:8787",
         "READARR_API_KEY": "your-readarr-api-key",
         "PROWLARR_URL": "http://localhost:9696",
-        "PROWLARR_API_KEY": "your-prowlarr-api-key"
+        "PROWLARR_API_KEY": "your-prowlarr-api-key",
+        "LINGARR_URL": "http://localhost:9877",
+        "LINGARR_API_KEY": "your-lingarr-api-key"
       }
     }
   }
@@ -157,6 +161,15 @@ Add to `~/.claude.json`:
 - "Are my indexers healthy?"
 - "How are my indexers performing?"
 - "Test all my Prowlarr indexers"
+
+### Subtitle Translation (Lingarr)
+- "What movies have untranslated subtitles?"
+- "Show me shows that need subtitle translation"
+- "Translate the French subtitles for this movie to English"
+- "What's the current translation queue?"
+- "Show translation statistics"
+- "Cancel that translation request"
+- "Sync movies from Radarr to Lingarr"
 
 ### Configuration Review
 - "Review my Sonarr setup and suggest improvements"
@@ -234,6 +247,28 @@ Add to `~/.claude.json`:
 | `prowlarr_search` | Search across all indexers |
 | `prowlarr_test_indexers` | Test all indexers and return health status |
 | `prowlarr_get_stats` | Get indexer statistics (queries, grabs, failures) |
+
+### Lingarr Tools (Subtitle Translation)
+
+| Tool | Description |
+|------|-------------|
+| `lingarr_get_movies` | List movies with translation status (translated, pending, untranslated) |
+| `lingarr_get_shows` | List TV shows with translation status |
+| `lingarr_get_statistics` | Get translation statistics (totals, by language, by status) |
+| `lingarr_get_daily_statistics` | Get daily translation statistics for a date range |
+| `lingarr_get_languages` | List available source and target languages |
+| `lingarr_get_models` | List available AI translation models |
+| `lingarr_get_translation_requests` | View translation request queue with filtering |
+| `lingarr_get_active_translations` | Get currently active/in-progress translations |
+| `lingarr_translate_subtitle` | Start a subtitle translation job |
+| `lingarr_cancel_translation` | Cancel a pending or in-progress translation |
+| `lingarr_retry_translation` | Retry a failed translation request |
+| `lingarr_get_subtitles` | Get subtitle files for a specific media path |
+| `lingarr_get_jobs` | List scheduled jobs and their status |
+| `lingarr_run_automation` | Manually trigger the automated translation job |
+| `lingarr_sync_media` | Sync movies or shows from Radarr/Sonarr |
+| `lingarr_exclude_media` | Toggle exclusion of media from automatic translation |
+| `lingarr_get_version` | Get Lingarr version information |
 
 ### Configuration Review Tools
 
@@ -322,6 +357,7 @@ MIT - see [LICENSE](LICENSE) for details.
 
 - [Servarr Wiki](https://wiki.servarr.com/) - Documentation for all *arr applications
 - [TRaSH Guides](https://trash-guides.info/) - Quality profiles, custom formats, and setup guides
+- [Lingarr](https://github.com/lingarr/lingarr) - Subtitle translation service
 - [Sonarr API Docs](https://sonarr.tv/docs/api/)
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [GitHub Repository](https://github.com/aplaceforallmystuff/mcp-arr)

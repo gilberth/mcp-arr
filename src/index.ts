@@ -29,10 +29,15 @@ import {
   ArrService,
 } from "./arr-client.js";
 import { trashClient, TrashService } from "./trash-client.js";
+import { LingarrClient } from "./lingarr-client.js";
+import { getLingarrTools } from "./lingarr-tools.js";
+import { handleLingarrTool, getLingarrStatus } from "./lingarr-handlers.js";
 
 // Configuration from environment
+type AllServices = ArrService | 'lingarr';
+
 interface ServiceConfig {
-  name: ArrService;
+  name: AllServices;
   displayName: string;
   url?: string;
   apiKey?: string;
@@ -44,6 +49,7 @@ const services: ServiceConfig[] = [
   { name: 'lidarr', displayName: 'Lidarr (Music)', url: process.env.LIDARR_URL, apiKey: process.env.LIDARR_API_KEY },
   { name: 'readarr', displayName: 'Readarr (Books)', url: process.env.READARR_URL, apiKey: process.env.READARR_API_KEY },
   { name: 'prowlarr', displayName: 'Prowlarr (Indexers)', url: process.env.PROWLARR_URL, apiKey: process.env.PROWLARR_API_KEY },
+  { name: 'lingarr', displayName: 'Lingarr (Subtitles)', url: process.env.LINGARR_URL, apiKey: process.env.LINGARR_API_KEY },
 ];
 
 // Check which services are configured
@@ -62,6 +68,7 @@ const clients: {
   lidarr?: LidarrClient;
   readarr?: ReadarrClient;
   prowlarr?: ProwlarrClient;
+  lingarr?: LingarrClient;
 } = {};
 
 for (const service of configuredServices) {
@@ -82,8 +89,15 @@ for (const service of configuredServices) {
     case 'prowlarr':
       clients.prowlarr = new ProwlarrClient(config);
       break;
+    case 'lingarr':
+      clients.lingarr = new LingarrClient(config);
+      break;
   }
 }
+
+// Define a type for services that support config tools
+type ConfigServiceName = 'sonarr' | 'radarr' | 'lidarr' | 'readarr';
+type ConfigClient = SonarrClient | RadarrClient | LidarrClient | ReadarrClient;
 
 // Build tools based on configured services
 const TOOLS: Tool[] = [
@@ -578,6 +592,11 @@ if (clients.prowlarr) {
   );
 }
 
+// Lingarr tools - imported from separate module to reduce merge conflicts
+if (clients.lingarr) {
+  TOOLS.push(...getLingarrTools());
+}
+
 // Cross-service search tool
 TOOLS.push({
   name: "arr_search_all",
@@ -756,20 +775,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
+    // Delegate Lingarr tools to separate handler module
+    const lingarrResult = await handleLingarrTool(
+      name,
+      (args || {}) as Record<string, unknown>,
+      clients.lingarr
+    );
+    if (lingarrResult) {
+      return lingarrResult;
+    }
+
     switch (name) {
       case "arr_status": {
         const statuses: Record<string, unknown> = {};
         for (const service of configuredServices) {
           try {
-            const client = clients[service.name];
-            if (client) {
-              const status = await client.getStatus();
-              statuses[service.name] = {
-                configured: true,
-                connected: true,
-                version: status.version,
-                appName: status.appName,
-              };
+            if (service.name === 'lingarr' && clients.lingarr) {
+              // Lingarr status handled by separate module
+              statuses[service.name] = await getLingarrStatus(clients.lingarr);
+            } else {
+              const client = clients[service.name as keyof Omit<typeof clients, 'lingarr'>];
+              if (client) {
+                const status = await client.getStatus();
+                statuses[service.name] = {
+                  configured: true,
+                  connected: true,
+                  version: status.version,
+                  appName: status.appName,
+                };
+              }
             }
           } catch (error) {
             statuses[service.name] = {
@@ -796,8 +830,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_get_quality_profiles":
       case "lidarr_get_quality_profiles":
       case "readarr_get_quality_profiles": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
         const profiles = await client.getQualityProfiles();
         return {
@@ -805,16 +839,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               count: profiles.length,
-              profiles: profiles.map(p => ({
+              profiles: profiles.map((p: any) => ({
                 id: p.id,
                 name: p.name,
                 upgradeAllowed: p.upgradeAllowed,
                 cutoff: p.cutoff,
                 allowedQualities: p.items
-                  .filter(i => i.allowed)
-                  .map(i => i.quality?.name || i.name || (i.items?.map(q => q.quality.name).join(', ')))
+                  .filter((i: any) => i.allowed)
+                  .map((i: any) => i.quality?.name || i.name || (i.items?.map((q: any) => q.quality.name).join(', ')))
                   .filter(Boolean),
-                customFormats: p.formatItems?.filter(f => f.score !== 0).map(f => ({
+                customFormats: p.formatItems?.filter((f: any) => f.score !== 0).map((f: any) => ({
                   name: f.name,
                   score: f.score,
                 })) || [],
@@ -831,8 +865,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_get_health":
       case "lidarr_get_health":
       case "readarr_get_health": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
         const health = await client.getHealth();
         return {
@@ -840,7 +874,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               issueCount: health.length,
-              issues: health.map(h => ({
+              issues: health.map((h: any) => ({
                 source: h.source,
                 type: h.type,
                 message: h.message,
@@ -857,8 +891,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_get_root_folders":
       case "lidarr_get_root_folders":
       case "readarr_get_root_folders": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
         const folders = await client.getRootFoldersDetailed();
         return {
@@ -866,7 +900,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               count: folders.length,
-              folders: folders.map(f => ({
+              folders: folders.map((f: any) => ({
                 id: f.id,
                 path: f.path,
                 accessible: f.accessible,
@@ -884,8 +918,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_get_download_clients":
       case "lidarr_get_download_clients":
       case "readarr_get_download_clients": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
         const downloadClients = await client.getDownloadClients();
         return {
@@ -893,7 +927,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               count: downloadClients.length,
-              clients: downloadClients.map(c => ({
+              clients: downloadClients.map((c: any) => ({
                 id: c.id,
                 name: c.name,
                 implementation: c.implementationName,
@@ -914,8 +948,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_get_naming":
       case "lidarr_get_naming":
       case "readarr_get_naming": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
         const naming = await client.getNamingConfig();
         return {
@@ -931,8 +965,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_get_tags":
       case "lidarr_get_tags":
       case "readarr_get_tags": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
         const tags = await client.getTags();
         return {
@@ -940,7 +974,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               count: tags.length,
-              tags: tags.map(t => ({ id: t.id, label: t.label })),
+              tags: tags.map((t: any) => ({ id: t.id, label: t.label })),
             }, null, 2),
           }],
         };
@@ -951,8 +985,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "radarr_review_setup":
       case "lidarr_review_setup":
       case "readarr_review_setup": {
-        const serviceName = name.split('_')[0] as keyof typeof clients;
-        const client = clients[serviceName];
+        const serviceName = name.split('_')[0] as ConfigServiceName;
+        const client = clients[serviceName] as ConfigClient | undefined;
         if (!client) throw new Error(`${serviceName} not configured`);
 
         // Gather all configuration data
@@ -990,7 +1024,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             issues: health,
           },
           storage: {
-            rootFolders: rootFolders.map(f => ({
+            rootFolders: rootFolders.map((f: any) => ({
               path: f.path,
               accessible: f.accessible,
               freeSpace: formatBytes(f.freeSpace),
@@ -998,32 +1032,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               unmappedFolderCount: f.unmappedFolders?.length || 0,
             })),
           },
-          qualityProfiles: qualityProfiles.map(p => ({
+          qualityProfiles: qualityProfiles.map((p: any) => ({
             id: p.id,
             name: p.name,
             upgradeAllowed: p.upgradeAllowed,
             cutoff: p.cutoff,
             allowedQualities: p.items
-              .filter(i => i.allowed)
-              .map(i => i.quality?.name || i.name || (i.items?.map(q => q.quality.name).join(', ')))
+              .filter((i: any) => i.allowed)
+              .map((i: any) => i.quality?.name || i.name || (i.items?.map((q: any) => q.quality.name).join(', ')))
               .filter(Boolean),
-            customFormatsWithScores: p.formatItems?.filter(f => f.score !== 0).length || 0,
+            customFormatsWithScores: p.formatItems?.filter((f: any) => f.score !== 0).length || 0,
             minFormatScore: p.minFormatScore,
           })),
-          qualityDefinitions: qualityDefinitions.map(d => ({
+          qualityDefinitions: qualityDefinitions.map((d: any) => ({
             quality: d.quality.name,
             minSize: d.minSize + ' MB/min',
             maxSize: d.maxSize === 0 ? 'unlimited' : d.maxSize + ' MB/min',
             preferredSize: d.preferredSize + ' MB/min',
           })),
-          downloadClients: downloadClients.map(c => ({
+          downloadClients: downloadClients.map((c: any) => ({
             name: c.name,
             type: c.implementationName,
             protocol: c.protocol,
             enabled: c.enable,
             priority: c.priority,
           })),
-          indexers: indexers.map(i => ({
+          indexers: indexers.map((i: any) => ({
             name: i.name,
             protocol: i.protocol,
             enableRss: i.enableRss,
@@ -1041,7 +1075,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             importExtraFiles: mediaManagement.importExtraFiles,
             extraFileExtensions: mediaManagement.extraFileExtensions,
           },
-          tags: tags.map(t => t.label),
+          tags: tags.map((t: any) => t.label),
           ...(metadataProfiles && { metadataProfiles }),
         };
 
